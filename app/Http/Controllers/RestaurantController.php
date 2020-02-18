@@ -286,11 +286,47 @@ class RestaurantController extends Controller
         }
     }
 
+    public function getCallingHistory(Request $request){
+        try {
+            $data = DB::table('callings')
+            ->join('users', 'callings.id_user', '=', 'users.id')
+            ->join('tables', 'callings.id_table', '=', 'tables.id')
+            ->select('callings.*','tables.table_number')
+            ->where('callings.id_restaurant', $request->id_restaurant)
+            ->where('callings.id_user', $request->id_user)
+            ->orderBy('callings.created_at', 'DESC')
+            ->get();
+
+            if(!$data->isEmpty()){
+                $statusCode = 200;
+                $response = [
+                    'error' => false,
+                    'message' => 'Data ditemukan',
+                    'dataCallings' => $data
+                ];    
+            } else {
+                $statusCode = 404;
+                $response = [
+                    'error' => false,
+                    'message' => 'Data tidak ditemukan',
+                ];    
+            }
+        } catch (Exception $e) {
+            $statusCode = 500;
+            $response = [
+                'error' => true,
+                'message' => 'Server error',
+            ];    
+        }finally{
+            return response($response,$statusCode)->header('Content-Type','application/json');
+        }
+    }
+
     public function getOrderDetail(Request $request){
         try {
             $dataItemOrder = DB::table('item_orders')
             ->join('menus', 'item_orders.id_menu', '=', 'menus.id')
-            ->select('item_orders.*','menus.name')
+            ->select('item_orders.*','menus.name','menus.image')
             ->where('item_orders.id_order', $request->id_order)
             ->get();
 
@@ -598,25 +634,32 @@ class RestaurantController extends Controller
 
     public function respondCalling(Request $request){
         try{
-            $data=Callings::where('id','=',$request->id_calling)->first();        
-            $data->is_active = "0";
-            $data->saveOrFail();
-
-            $FCMToken = DB::table('users')->where('id', $data->id_user)->value('device_token');
-            $service= new NotificationService();
-            if($request->status == "Reject"){
-                $callService= $service->sendNotifToUser($FCMToken,'calling','Panggilan Ditolak','Staff kami nampaknya sedang sibuk dan tidak bisa menanggapi panggilan anda.');
-            }else if($request->status == "Responded"){
-                $callService= $service->sendNotifToUser($FCMToken,'calling','Panggilan Diterima','Mohon Tunggu, Staff kami sudah menerima panggilan anda dan akan segera datang.');
-            }
-            
-
-            $statusCode = 200;
-            $response = [
-                'error' => false,
-                'message' => 'update berhasil',
-            ];
-
+            $data=Callings::where('id','=',$request->id_calling)->first();
+            if($data->is_active == "1"){
+                $FCMToken = DB::table('users')->where('id', $data->id_user)->value('device_token');
+                $service= new NotificationService();
+                if($request->status == "Reject"){
+                    $data->is_active = "0";
+                    $data->saveOrFail();
+                    $callService= $service->sendNotifToUser($FCMToken,'calling','Panggilan Ditolak','Staff kami nampaknya sedang sibuk dan tidak bisa menanggapi panggilan anda.');
+                }else if($request->status == "Responded"){
+                    $data->is_active = "2";
+                    $data->saveOrFail();
+                    $callService= $service->sendNotifToUser($FCMToken,'calling','Panggilan Diterima','Mohon Tunggu, Staff kami sudah menerima panggilan anda dan akan segera datang.');
+                }                
+    
+                $statusCode = 200;
+                $response = [
+                    'error' => false,
+                    'message' => 'update berhasil',
+                ];
+            }else{
+                $statusCode = 404;
+                $response = [
+                    'error' => true,
+                    'message' => 'Gagal update',
+                ];   
+            }   
         }catch (Exception $e){
 
             $statusCode = 404;

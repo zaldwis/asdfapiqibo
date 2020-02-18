@@ -62,6 +62,7 @@ $router->get('/getPersonalMessage', 'ChatController@getPersonalMessage');
 $router->get('/getFriendRequests', 'ChatController@getFriendRequests');
 $router->put('/updateFriendRequests', 'ChatController@updateFriendRequests');
 $router->post('/saveMessageToBot', 'ChatController@saveMessageToBot');
+$router->get('/getCallingHistory', 'RestaurantController@getCallingHistory');
 
 
 
