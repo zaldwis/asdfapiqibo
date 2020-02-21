@@ -64,5 +64,12 @@ $router->put('/updateFriendRequests', 'ChatController@updateFriendRequests');
 $router->post('/saveMessageToBot', 'ChatController@saveMessageToBot');
 $router->get('/getCallingHistory', 'RestaurantController@getCallingHistory');
 
+//API untuk CMS
+$router->post('/RegisterSuperAdmin', 'CMSController@RegisterSuperAdmin');
+$router->post('/AddRestaurant', 'CMSController@AddRestaurant');
+$router->post('/registerRestaurantOfficers', 'CMSController@registerRestaurantOfficers');
+$router->get('/loginAdmin', 'CMSController@loginAdmin');
+$router->get('/loginRestaurantAdmin', 'CMSController@loginRestaurantAdmin');
+
 
 
